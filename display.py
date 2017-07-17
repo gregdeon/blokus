@@ -27,7 +27,7 @@ class CLIDisplay(Display):
             str_line = "|"
             for c in range(engine.board_w):
                 state_xy = engine.getState(c, r)
-                if state_xy == 0:
+                if state_xy == -1:
                     str_line += "."
                 else:
                     str_line += "%d" % state_xy

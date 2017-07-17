@@ -1,6 +1,11 @@
 """Classes and utilities to describe all of the game pieces.
 """
 
+def negateList(lst):
+    """Helper function: negate every item in a list
+    """
+    return [-x for x in lst]
+
 class Piece(object):
     """A piece is a collection of tiles with various (x,y) offsets.
 
@@ -39,19 +44,19 @@ class Piece(object):
             raise ValueError("rot must be in range [0,3] (given %d)" % rot)
 
         if rot == 1:
-            x =  self.y
-            y = -self.x
+            x =            self.y
+            y = negateList(self.x)
         elif rot == 2:
-            x = -self.x
-            y = -self.y
+            x = negateList(self.x)
+            y = negateList(self.y)
         elif rot == 3:
-            x = -self.y
-            y =  self.x
+            x = negateList(self.y)
+            y =            self.x
         else: # rot = 0
-            x =  self.x
-            y =  self.y
+            x = self.x
+            y = self.y
         if flip:
-            x = -x
+            x = negateList(x)
 
         return (x[tile] + x_offset, y[tile] + y_offset)
 

@@ -25,6 +25,7 @@ class GameEngine(object):
 
         self.turn_num = 0
         self.passed = [False]*4
+        self.score = [0]*4
         self.board = Board(self.board_w, self.board_h, self.piece_list)
 
     def _playTurn(self):
@@ -49,7 +50,7 @@ class GameEngine(object):
                     self.passed[p] = True
                     break
                 try:
-                    self.board.addMove(p, move)
+                    self.score[p] += self.board.addMove(p, move)
                     break
                 except ValueError as e:
                     print "Error: move is illegal. Try again:"
@@ -64,9 +65,15 @@ class GameEngine(object):
                 return False
         return True
 
+    def _print_scores(self):
+        for p in range(4):
+            print "Player %d: %d pts" % (p+1, self.score[p])
+
     def playGame(self):
         while not self._allPlayersPassed():
             self._playTurn()
+        
+        self._print_scores()
 
 
 def main():

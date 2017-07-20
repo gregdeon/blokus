@@ -2,6 +2,8 @@
 """
 
 from board import Board
+import colorama
+colorama.init(autoreset=True)
 
 class Display(object):
     """the Display class defines an interface for the game engine to draw the
@@ -24,16 +26,34 @@ class CLIDisplay(Display):
     def drawBoard(self, board):
         str_horiz = "+" + "-"*board.board_w + "+"
 
+        color_fore = [
+            colorama.Fore.RED,
+            colorama.Fore.YELLOW,
+            colorama.Fore.GREEN,
+            colorama.Fore.BLUE
+        ]
+
+        color_back = [
+            colorama.Back.RED,
+            colorama.Back.YELLOW,
+            colorama.Back.GREEN,
+            colorama.Back.BLUE
+        ]
+
+        color_reset = colorama.Style.RESET_ALL
+
         print str_horiz
         for r in range(board.board_h):
             str_line = "|"
             for c in range(board.board_w):
                 state_xy = board.getState(c, r)
                 if state_xy == -1:
-                    str_line += "."
+                    str_line += color_reset + "."
                 else:
-                    str_line += "%d" % state_xy
-            str_line += "|"
+                    p = state_xy
+                    str_color = color_fore[p] + color_back[p] + "%d" % p
+                    str_line += str_color
+            str_line += color_reset + "|"
             print str_line
         print str_horiz
         print ""

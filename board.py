@@ -40,6 +40,8 @@ class Board(object):
 
         If the move is legal, the board state is updated; if it's not legal, a
         ValueError is raised.
+
+        Returns the number of tiles placed on the board.
         """
         if not self.checkMoveValid(player, move):
             raise ValueError("Move is not allowed")
@@ -48,6 +50,7 @@ class Board(object):
         for t in range(piece.getNumTiles()):
             (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
             self._state[y][x] = player
+        return piece.getNumTiles()
 
     def checkMoveValid(self, player, move):
         """Check if <player> can legally perform <move>.

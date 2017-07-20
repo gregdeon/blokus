@@ -113,15 +113,42 @@ class PieceList(object):
             L += 1 + num_lines
         
     def getNumPieces(self):
+        """Return the number of distinct pieces in the list.
+        """
         return len(self.pieces)
 
     def getPiece(self, n):
+        """Return piece <n> from this list.
+        """
         if n < 0:
             raise ValueError("Can't retrieve piece %d" % n)
 
         return self.pieces[n]
 
+"""global_piece_list: A shared PieceList object. Use the following functions to 
+access it from other modules.
+"""
+global_piece_list = None
+
+def initPieceList(fname):
+    """Create a global list of pieces by reading from <fname>.
+
+    Stores a single list so that other modules don't need to re-run the 
+    piece list initialization. 
+    
+    Call this once during startup.
+    """
+    global global_piece_list
+
+    global_piece_list = PieceList(fname)
+
+def getPieceList():
+    """Return the shared global piece list.
+    """
+    return global_piece_list
+
 if __name__ == "__main__":
+    # Test piece list loading
     pl = PieceList("valid_pieces.txt")
     print pl.getNumPieces()
     for i in range(pl.getNumPieces()):

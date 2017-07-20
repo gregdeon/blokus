@@ -65,7 +65,58 @@ class Board(object):
         """
         piece = self.piece_list.getPiece(move.piece)
         attached_corner = False
-        
+
+        for t in range(piece.getNumTiles()):
+            (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
+
+            # If any tile is illegal, this move isn't valid
+            if not self.checkTileLegal(player, x, y):
+                return False
+
+            if self.checkTileAttached(player, x, y):
+                attached_corner = True
+
+            # If at least one tile is attached, this move is valid
+        return attached_corner
+
+    def checkTileLegal(self, player, x, y):
+        """Check if it's legal for <player> to place one tile at (<x>, <y>).
+
+        Legal tiles:
+        - Are in bounds
+        - Don't intersect with existing tiles
+        - Aren't adjacent to the player's existing tiles
+
+        Returns True if legal or False if not.
+        """
+        # Make sure tile in bounds
+        if x < 0 or x >= self.board_w or y < 0 or y >= self.board_h:
+            return False
+
+        # Make sure tile isn't intersecting other pieces
+        if self._state[y][x] != -1:
+            return False
+
+        # Make sure tile isn't next to own pieces
+        if x > 0 and self._state[y][x-1] == player:
+            return False
+        if x < self.board_w-1 and self._state[y][x+1] == player:
+            return False
+        if y > 0 and self._state[y-1][x] == player:
+            return False
+        if y < self.board_h-1 and self._state[y+1][x] == player:
+            return False
+
+        return True
+
+    def checkTileAttached(self, player, x, y):
+        """Check if (<x>, <y>) is diagonally attached to <player>'s moves.
+
+        Note that this does not check if this move is legal.
+
+        Returns True if attached or False if not.
+        """
+        # Find which corner the player owns
         if player == 0:
             corner_x = self.board_w-1
             corner_y = 0
@@ -79,43 +130,20 @@ class Board(object):
             corner_x = self.board_w-1
             corner_y = self.board_h-1
 
-        for t in range(piece.getNumTiles()):
-            (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
-
-            # Make sure tile in bounds
-            if x < 0 or x >= self.board_w or y < 0 or y >= self.board_h:
-                return False
-
-            # Make sure tile isn't intersecting other pieces
-            if self._state[y][x] != -1:
-                return False
-
-            # Make sure tile isn't next to own pieces
-            if x > 0 and self._state[y][x-1] == player:
-                return False
-            if x < self.board_w-1 and self._state[y][x+1] == player:
-                return False
-            if y > 0 and self._state[y-1][x] == player:
-                return False
-            if y < self.board_h-1 and self._state[y+1][x] == player:
-                return False
-
-            # Check if attached at corner
-            if x > 0 and y > 0 and \
-                self._state[y-1][x-1] == player:
-                attached_corner = True
-            elif x > 0 and y < self.board_h-1 and \
-                self._state[y+1][x-1] == player:
-                attached_corner = True
-            elif x < self.board_w-1 and y < self.board_h-1 and \
-                self._state[y+1][x+1] == player:
-                attached_corner = True
-            elif x < self.board_w-1 and y > 0 and \
-                self._state[y-1][x+1] == player:
-                attached_corner = True
-            elif x == corner_x and y == corner_y:
-                attached_corner = True
-        return attached_corner
+        if x > 0 and y > 0 and \
+            self._state[y-1][x-1] == player:
+            return True
+        elif x > 0 and y < self.board_h-1 and \
+            self._state[y+1][x-1] == player:
+            return True
+        elif x < self.board_w-1 and y < self.board_h-1 and \
+            self._state[y+1][x+1] == player:
+            return True
+        elif x < self.board_w-1 and y > 0 and \
+            self._state[y-1][x+1] == player:
+            return True
+        elif x == corner_x and y == corner_y:
+            return True
 
     def getState(self, x, y):
         return self._state[y][x]

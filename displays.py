@@ -20,6 +20,14 @@ class Display(object):
         """
         raise NotImplementedError(display_error_string)
 
+class NoDisplay(Display):
+    """The NoDisplay doesn't bother drawing the game. Useful for running many
+    iterations of the game.
+    """
+
+    def drawBoard(self, board):
+        pass
+
 class CLIDisplay(Display):
     """The CLIDisplay class prints the game board to the command line
     """

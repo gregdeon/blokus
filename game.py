@@ -1,6 +1,7 @@
 import sys
+import numpy as np
 
-from displays import CLIDisplay 
+from displays import CLIDisplay, NoDisplay
 from inputs import RandomInput
 from pieces import PieceList
 from board import Move, Board
@@ -43,7 +44,7 @@ class GameEngine(object):
             if self.passed[p]:
                 continue
 
-            print "Board state:"
+            #print "Board state:"
             self.display.drawBoard(self.board)
 
             while True:
@@ -61,7 +62,7 @@ class GameEngine(object):
                 except ValueError as e:
                     print "Error: move is illegal. Try again:"
 
-        print "Ending turn %d" % self.turn_num
+        #print "Ending turn %d" % self.turn_num
 
     def _allPlayersPassed(self):
         """Return True if all players have passed.
@@ -80,7 +81,31 @@ class GameEngine(object):
             self._playTurn()
         
         self._print_scores()
+        return self.score
 
+
+def test_bots():
+    num_games = 20
+
+    disp = NoDisplay()
+    inputs = [RandomInput() for p in range(4)]
+
+    results = []
+    for i in range(num_games):
+        engine = GameEngine(disp, inputs)
+        result = engine.playGame()
+        results.append(result)
+
+    win_count = [0] * 4
+    for i in range(num_games):
+        winner = np.argmax(results[i])
+        print "Game %d: %2d/%2d/%2d/%2d" % (
+            i+1, results[i][0], results[i][1], results[i][2], results[i][3]
+        )
+        win_count[winner] += 1
+    print "Overall: %2d/%2d/%2d/%2d" % (
+        win_count[0], win_count[1], win_count[2], win_count[3]
+    )
 
 def main():
     disp = CLIDisplay()
@@ -89,4 +114,6 @@ def main():
     engine.playGame()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    test_bots()
+    

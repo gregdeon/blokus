@@ -26,6 +26,8 @@ class Board(object):
     - _state: a 2D array of the board state. -1 = free; 0-3 = player x's tile
     - piece_list: A PieceList object (probably shared with the game engine) to
       help understand the moves
+
+    TODO: improve this by adding more data structures to speed up checks
     """
 
     def __init__(self, board_w, board_h, piece_list):
@@ -88,6 +90,8 @@ class Board(object):
         - Aren't adjacent to the player's existing tiles
 
         Returns True if legal or False if not.
+
+        TODO: this should be a fast lookup
         """
         # Make sure tile in bounds
         if x < 0 or x >= self.board_w or y < 0 or y >= self.board_h:
@@ -115,6 +119,8 @@ class Board(object):
         Note that this does not check if this move is legal.
 
         Returns True if attached or False if not.
+
+        TODO: make this a fast lookup
         """
         # Find which corner the player owns
         if player == 0:

@@ -38,7 +38,7 @@ class GameEngine(object):
         new moves if illegal moves are provided.
         """
         self.turn_num += 1
-        print "Starting turn %d" % self.turn_num
+        #print "Starting turn %d" % self.turn_num
 
         for p in range(4):
             if self.passed[p]:
@@ -114,6 +114,6 @@ def main():
     engine.playGame()
 
 if __name__ == "__main__":
-    #main()
-    test_bots()
+    main()
+    #test_bots()
     

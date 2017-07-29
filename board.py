@@ -24,10 +24,12 @@ class Board(object):
     The Board stores:
     - board_w/board_h: the width and height of the playing area
     - _state: a 2D array of the board state. -1 = free; 0-3 = player x's tile
+    - _legal: a 4 x 2D array. _legal[player][y][x] is True iff (x,y) is not
+      on another player's piece or adjacent to a player's own piece
+    - _connected: a 4 x 2D array. _connected[player][y][x] is True iff (x,y) is 
+      diagonally connected to another one of the player's tiles
     - piece_list: A PieceList object (probably shared with the game engine) to
       help understand the moves
-
-    TODO: improve this by adding more data structures to speed up checks
     """
 
     def __init__(self, board_w, board_h, piece_list):
@@ -35,6 +37,25 @@ class Board(object):
         self.board_h = board_h
 
         self._state = [[-1 for c in range(board_w)] for r in range(board_h)]
+
+        self._legal = [
+            [
+                [True for c in range(board_w)
+            ] for r in range(board_h)] 
+        for p in range(4)]
+
+        self._connected = [
+            [
+                [False for c in range(board_w)
+            ] for r in range(board_h)] 
+        for p in range(4)]
+
+        # Set up initial corners for each player now
+        self._connected[0][0             ][self.board_w-1] = True
+        self._connected[1][0             ][             0] = True
+        self._connected[2][self.board_h-1][             0] = True
+        self._connected[3][self.board_h-1][self.board_h-1] = True
+
         self.piece_list = piece_list
 
     def addMove(self, player, move):
@@ -49,9 +70,36 @@ class Board(object):
             raise ValueError("Move is not allowed")
 
         piece = self.piece_list.getPiece(move.piece)
+        
+        # Update internal state for each tile
         for t in range(piece.getNumTiles()):
             (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
             self._state[y][x] = player
+
+            # Nobody can play on this square
+            for p in range(4):
+                self._legal[p][y][x] = False
+
+            # This player can't play next to this square
+            if x > 0:
+                self._legal[player][y][x-1] = False
+            if x < self.board_w-1:
+                self._legal[player][y][x+1] = False
+            if y > 0:
+                self._legal[player][y-1][x] = False
+            if y < self.board_h-1:
+                self._legal[player][y+1][x] = False
+
+            # The diagonals are now attached
+            if x > 0 and y > 0:
+                self._connected[player][y-1][x-1] = True
+            if x > 0 and y < self.board_h-1:
+                self._connected[player][y+1][x-1] = True
+            if x < self.board_w-1 and y < self.board_h-1:
+                self._connected[player][y+1][x+1] = True
+            if x < self.board_w-1 and y > 0:
+                self._connected[player][y-1][x+1] = True
+
         return piece.getNumTiles()
 
     def checkMoveValid(self, player, move):
@@ -90,28 +138,14 @@ class Board(object):
         - Aren't adjacent to the player's existing tiles
 
         Returns True if legal or False if not.
-
-        TODO: this should be a fast lookup
         """
+
         # Make sure tile in bounds
         if x < 0 or x >= self.board_w or y < 0 or y >= self.board_h:
             return False
 
-        # Make sure tile isn't intersecting other pieces
-        if self._state[y][x] != -1:
-            return False
-
-        # Make sure tile isn't next to own pieces
-        if x > 0 and self._state[y][x-1] == player:
-            return False
-        if x < self.board_w-1 and self._state[y][x+1] == player:
-            return False
-        if y > 0 and self._state[y-1][x] == player:
-            return False
-        if y < self.board_h-1 and self._state[y+1][x] == player:
-            return False
-
-        return True
+        # Otherwise, it's in the lookup table
+        return self._legal[player][y][x]
 
     def checkTileAttached(self, player, x, y):
         """Check if (<x>, <y>) is diagonally attached to <player>'s moves.
@@ -119,37 +153,16 @@ class Board(object):
         Note that this does not check if this move is legal.
 
         Returns True if attached or False if not.
-
-        TODO: make this a fast lookup
         """
-        # Find which corner the player owns
-        if player == 0:
-            corner_x = self.board_w-1
-            corner_y = 0
-        elif player == 1:
-            corner_x = 0
-            corner_y = 0
-        elif player == 2:
-            corner_x = 0
-            corner_y = self.board_h-1
-        else: #player == 3
-            corner_x = self.board_w-1
-            corner_y = self.board_h-1
 
-        if x > 0 and y > 0 and \
-            self._state[y-1][x-1] == player:
-            return True
-        elif x > 0 and y < self.board_h-1 and \
-            self._state[y+1][x-1] == player:
-            return True
-        elif x < self.board_w-1 and y < self.board_h-1 and \
-            self._state[y+1][x+1] == player:
-            return True
-        elif x < self.board_w-1 and y > 0 and \
-            self._state[y-1][x+1] == player:
-            return True
-        elif x == corner_x and y == corner_y:
-            return True
+        # Make sure tile in bounds
+        if x < 0 or x >= self.board_w or y < 0 or y >= self.board_h:
+            return False
+
+        # Otherwise, it's in the lookup table
+        return self._connected[player][y][x]
+
+
 
     def getState(self, x, y):
         return self._state[y][x]

@@ -10,8 +10,15 @@ class Piece(object):
     """A piece is a collection of tiles with various (x,y) offsets.
 
     Variables:
-    - x: List of x coordinates of the piece
-    - y: List of y coordinates of the piece
+    - x: Lists of x coordinates of the piece
+    - y: Lists of y coordinates of the piece
+
+    x and y each have 8 elements, which are:
+    x/y[0]: Initial orientation
+    x/y[1]: Rotated CW once
+    x/y[2]: Rotated CW twice
+    x/y[3]: Rotated CW three times
+    x/y[k+4]: x/y[k] flipped horizontally
     """
 
     def __init__(self, x_list, y_list):
@@ -24,14 +31,42 @@ class Piece(object):
         if len(x_list) > 5:
             raise ValueError("%d tiles provided; maximum 5" % len(x_list))
 
-        self.x = x_list
-        self.y = y_list
+        # Calculate flipped lists
+        x_list_flipped = negateList(x_list)
+        y_list_flipped = negateList(y_list)
+
+        # Set up data structure
+        self.x = []
+        self.y = []
+
+        # Position 0: default
+        self.x.append(x_list)
+        self.y.append(y_list)
+
+        # Position 1: rotated x1
+        self.x.append(y_list)
+        self.y.append(x_list_flipped)
+
+        # Position 2: rotated x2
+        self.x.append(x_list_flipped)
+        self.y.append(y_list_flipped)
+
+        # Position 3: rotated x3
+        self.x.append(y_list_flipped)
+        self.y.append(x_list)
+
+        # Positions 4-7: flipped copies
+        for i in range(4):
+            self.x.append(negateList(self.x[i]))
+            self.y.append(self.y[i])
+
+        print self.x
 
     def getNumTiles(self):
         """Return the number of tiles in this block. Helpful for iterating 
         through each tile.
         """
-        return len(self.x)
+        return len(self.x[0])
 
     def getTile(self, tile, x_offset=0, y_offset=0, rot=0, flip=False):
         """Return the (x,y) position of the <tile>th tile in this piece.
@@ -40,24 +75,15 @@ class Piece(object):
         positions on the game board.
         """
 
-        if rot < 0 or rot > 3:
-            raise ValueError("rot must be in range [0,3] (given %d)" % rot)
-
-        if rot == 1:
-            x =            self.y
-            y = negateList(self.x)
-        elif rot == 2:
-            x = negateList(self.x)
-            y = negateList(self.y)
-        elif rot == 3:
-            x = negateList(self.y)
-            y =            self.x
-        else: # rot = 0
-            x = self.x
-            y = self.y
+        # Find the correct rotation/flip in the list
+        idx = rot
         if flip:
-            x = negateList(x)
+            idx += 4
 
+        x = self.x[idx]
+        y = self.y[idx]
+
+        # Add offsets
         return (x[tile] + x_offset, y[tile] + y_offset)
 
 class PieceList(object):

@@ -1,4 +1,5 @@
 from board import Move, Board
+from pieces import getPieceList
 
 class Input(object):
     """The Input class defines an interface for the game engine to get input 
@@ -31,36 +32,41 @@ class RandomInput(Input):
     """
     def getMove(self, player, board, pieces):
         import random
+        piece_list = getPieceList()
 
+        """
         # Get a list of unique (x, y) points that might be legal
-        # Check for all legal diagonal points and consider all points in a 
-        # radius-2 box around them
         xy_list = []
         for x in range(0, 20):
             for y in range(0, 20):
                 if not board.checkTileLegal(player, x, y):
                     continue
                 if board.checkTileAttached(player, x, y):
-                    min_x = max(0, x-2)
-                    max_x = min(20, x+3)
-                    min_y = max(0, y-2)
-                    max_y = min(20, y+3)
-                    for xi in range(min_x, max_x):
-                        for yi in range(min_y, max_y):
-                            xy_list.append((xi, yi))
-        xy_list = sorted(set(xy_list))
+                    xy_list.append((x, y))
 
         # Generate all legal moves
         move_list = []
-        for piece in range(0, 21):
-            if not pieces[player][piece]:
+        for piece_id in range(0, 21):
+            if not pieces[player][piece_id]:
                 continue
-            for (x, y) in xy_list:
-                for rot in range(0, 4):
-                    for flip in [False, True]:
-                        new_move = Move(piece, x, y, rot, flip)
-                        if board.checkMoveValid(player, new_move):
-                            move_list.append(new_move)
+            for rot in range(0, 4):
+                for flip in [False, True]:
+                    piece = piece_list.getPiece(piece_id)
+                    tiles = piece.getTiles(0, 0, rot, flip)
+                    for (x, y) in xy_list:
+                        for t in tiles:
+                            x_off = x - t[0]
+                            y_off = y - t[1]
+                            new_move = Move(piece_id, x_off, y_off, rot, flip)
+                            if board.checkMoveValid(player, new_move):
+                                move_list.append(new_move)
+        """
+
+        all_moves = board.getAllMoves(player)
+        move_list = []
+        for move in all_moves:
+            if pieces[player][move.piece]:
+                move_list.append(move)
 
         # Pass if there are none
         if len(move_list) == 0:

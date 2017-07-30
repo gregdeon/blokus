@@ -36,27 +36,64 @@ class Board(object):
         self.board_w = board_w
         self.board_h = board_h
 
+        self.piece_list = piece_list
         self._state = [[-1 for c in range(board_w)] for r in range(board_h)]
-
+        
+        # Write down whether each (x,y) position is legal to play for each player
+        # Default is True
         self._legal = [
             [
                 [True for c in range(board_w)
             ] for r in range(board_h)] 
         for p in range(4)]
 
+        # Write down whether each (x,y) is diagonally attached
+        # Default is False except the corners
         self._connected = [
             [
                 [False for c in range(board_w)
             ] for r in range(board_h)] 
         for p in range(4)]
 
-        # Set up initial corners for each player now
-        self._connected[0][0             ][self.board_w-1] = True
-        self._connected[1][0             ][             0] = True
-        self._connected[2][self.board_h-1][             0] = True
-        self._connected[3][self.board_h-1][self.board_h-1] = True
+        # List of moves attached at every (x,y)
+        self._moves = [
+            [
+                [None for c in range(board_w)]
+            for r in range(board_h)]
+        for p in range(4)]
 
-        self.piece_list = piece_list
+        # Set up initial corners for each player now
+        corners = [
+            (0, 0),
+            (0, self.board_w-1),
+            (self.board_h-1, self.board_w-1),
+            (self.board_h-1, 0),
+        ]
+
+        for p in range(4):
+            c_x = corners[p][0]
+            c_y = corners[p][1]
+
+            x_min = max(0, c_x - 2)
+            x_max = min(board_w, c_x+3)
+
+            y_min = max(0, c_y - 2)
+            y_max = min(board_h, c_y+3)
+
+            c_x = corners[p][0]
+            c_y = corners[p][1]
+            self._connected[p][c_y][c_x] = True
+
+            for x in range(x_min, x_max):
+                for y in range(y_min, y_max):
+                    move_list = []
+                    for piece_id in range(0, 21):
+                        for rot in range(0, 4):
+                            for flip in [False, True]:
+                                new_move = Move(piece_id, x, y, rot, flip)
+                                if self.checkMoveValid(p, new_move):
+                                    move_list.append(new_move)
+                    self._moves[p][y][x] = move_list
 
     def addMove(self, player, move):
         """Try to add <player>'s <move>.
@@ -70,7 +107,7 @@ class Board(object):
             raise ValueError("Move is not allowed")
 
         piece = self.piece_list.getPiece(move.piece)
-        
+
         # Update internal state for each tile
         for t in range(piece.getNumTiles()):
             (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
@@ -81,26 +118,85 @@ class Board(object):
                 self._legal[p][y][x] = False
 
             # This player can't play next to this square
-            if x > 0:
-                self._legal[player][y][x-1] = False
-            if x < self.board_w-1:
-                self._legal[player][y][x+1] = False
-            if y > 0:
-                self._legal[player][y-1][x] = False
-            if y < self.board_h-1:
-                self._legal[player][y+1][x] = False
+            adjs = [
+                (x, y-1),
+                (x, y+1),
+                (x-1, y),
+                (x+1, y)
+            ]
+
+            for a in adjs:
+                a_x = a[0]
+                a_y = a[1]
+                if a_x >= 0 and a_x < self.board_w and \
+                a_y >= 0 and a_y < self.board_h:
+                    a_x = a[0]
+                    a_y = a[1]
+                    if self._legal[player][a_y][a_x]:
+                        self._legal[player][a_y][a_x] = False
 
             # The diagonals are now attached
-            if x > 0 and y > 0:
-                self._connected[player][y-1][x-1] = True
-            if x > 0 and y < self.board_h-1:
-                self._connected[player][y+1][x-1] = True
-            if x < self.board_w-1 and y < self.board_h-1:
-                self._connected[player][y+1][x+1] = True
-            if x < self.board_w-1 and y > 0:
-                self._connected[player][y-1][x+1] = True
+            diags = [
+                (x-1, y-1),
+                (x+1, y-1),
+                (x+1, y+1),
+                (x-1, y+1)
+            ]
+
+            for d in diags:
+                d_x = d[0]
+                d_y = d[1]
+
+                if d_x >= 0 and d_x < self.board_w and \
+                d_y >= 0 and d_y < self.board_h:
+                    if not self._connected[player][d_y][d_x]:
+                        self._connected[player][d_y][d_x] = True
+
+        # Update the lists of moves for each player around this area
+        self.updateState(player, move.x, move.y)
 
         return piece.getNumTiles()
+
+    def updateState(self, player, x, y, ):
+        """Update the lists of legal moves for each player in this area.
+        """
+
+        x_min = max(0, x - 5)
+        x_max = min(self.board_w, x+6)
+
+        y_min = max(0, y - 5)
+        y_max = min(self.board_h, y+6)
+
+        for p in range(4):
+            for xi in range(x_min, x_max):
+                for yi in range(y_min, y_max):
+                    if not self._legal[p][yi][xi]:
+                        self._moves[p][yi][xi] = []
+                    elif p == player and self._moves[p][yi][xi] is None:
+                        new_move_list = []
+                        for piece_id in range(0, 21):
+                            for rot in range(0, 4):
+                                for flip in [False, True]:
+                                    new_move = Move(piece_id, xi, yi, rot, flip)
+                                    if self.checkMoveValid(p, new_move):
+                                        new_move_list.append(new_move)
+                        if len(new_move_list) > 0:
+                            self._moves[p][yi][xi] = new_move_list
+
+                    elif self._moves[p][yi][xi] is not None:
+                        new_move_list = []
+                        for move in self._moves[p][yi][xi]:
+                            if self.checkMoveValid(p, move):
+                                new_move_list.append(move)
+                        self._moves[p][yi][xi] = new_move_list
+
+    def getAllMoves(self, player):
+        move_list = []
+        for x in range(0, self.board_w):
+            for y in range(0, self.board_h):
+                if self._moves[player][y][x] is not None:
+                    move_list += self._moves[player][y][x]
+        return move_list
 
     def checkMoveValid(self, player, move):
         """Check if <player> can legally perform <move>.
@@ -116,9 +212,8 @@ class Board(object):
         piece = self.piece_list.getPiece(move.piece)
         attached_corner = False
 
-        for t in range(piece.getNumTiles()):
-            (x,y) = piece.getTile(t, move.x, move.y, move.rot, move.flip)
-
+        xy_list = piece.getTiles(move.x, move.y, move.rot, move.flip)
+        for (x,y) in xy_list:
             # If any tile is illegal, this move isn't valid
             if not self.checkTileLegal(player, x, y):
                 return False
@@ -126,7 +221,7 @@ class Board(object):
             if self.checkTileAttached(player, x, y):
                 attached_corner = True
 
-            # If at least one tile is attached, this move is valid
+        # If at least one tile is attached, this move is valid
         return attached_corner
 
     def checkTileLegal(self, player, x, y):

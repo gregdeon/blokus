@@ -3,7 +3,7 @@ import numpy as np
 
 from displays import CLIDisplay, NoDisplay
 from inputs import RandomInput
-from pieces import PieceList
+from pieces import initPieceList, getPieceList
 from board import Move, Board
 
 class GameEngine(object):
@@ -22,7 +22,8 @@ class GameEngine(object):
             sys.exit(1)
         self.inputs = inputs
 
-        self.piece_list = PieceList("valid_pieces.txt")
+        initPieceList("valid_pieces.txt")
+        self.piece_list = getPieceList() #PieceList("valid_pieces.txt")
         num_pcs = self.piece_list.getNumPieces()
 
         self.turn_num = 0
@@ -109,6 +110,7 @@ def test_bots():
 
 def main():
     disp = CLIDisplay()
+    #disp = NoDisplay()
     inputs = [RandomInput() for p in range(4)]
     engine = GameEngine(disp, inputs)
     engine.playGame()

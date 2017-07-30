@@ -60,8 +60,6 @@ class Piece(object):
             self.x.append(negateList(self.x[i]))
             self.y.append(self.y[i])
 
-        print self.x
-
     def getNumTiles(self):
         """Return the number of tiles in this block. Helpful for iterating 
         through each tile.
@@ -85,6 +83,25 @@ class Piece(object):
 
         # Add offsets
         return (x[tile] + x_offset, y[tile] + y_offset)
+
+    def getTiles(self, x_offset=0, y_offset=0, rot=0, flip=False):
+        """Return a list of (x,y) tuples of all the tiles
+
+        x_offset, y_offset, rot, and flip are provided to help easily calculate 
+        positions on the game board.
+        """
+
+        # Find the correct rotation/flip in the list
+        idx = rot
+        if flip:
+            idx += 4
+        x = self.x[idx]
+        y = self.y[idx]
+
+        return [
+            (x[t] + x_offset, 
+             y[t] + y_offset) 
+            for t in range(self.getNumTiles())]
 
 class PieceList(object):
     """The PieceList class stores a list of all of the Blokus game pieces (the

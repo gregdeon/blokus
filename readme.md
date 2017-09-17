@@ -1,0 +1,1 @@
+This was my project to create a Blokus game in Python and implement AI for it. I stopped working on it because I couldn't get the game to run fast enough to make the Ai work in a reasonable amount of time.
